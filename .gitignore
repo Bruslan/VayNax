@@ -1,5 +1,8 @@
 ## Project-wide
 .DS_Store
+pods
+InstagramClone/GoogleService-info.plist
+
 
 ##Firebase
 InstagramClone/GoogleService-Info.plist
