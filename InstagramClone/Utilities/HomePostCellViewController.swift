@@ -13,6 +13,8 @@ class HomePostCellViewController: UICollectionViewController, HomePostCellDelega
 
     
 
+    
+
     var ChannelName: String? {
         didSet {
             
@@ -53,6 +55,9 @@ class HomePostCellViewController: UICollectionViewController, HomePostCellDelega
             if let unfollowAction = unfollowAction(forPost: post) {
                 alertController.addAction(unfollowAction)
             }
+            if let reportAction = reportAction(forPost: post) {
+                alertController.addAction(reportAction)
+            }
         }
         present(alertController, animated: true, completion: nil)
     }
@@ -66,7 +71,7 @@ class HomePostCellViewController: UICollectionViewController, HomePostCellDelega
             alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
             alert.addAction(UIAlertAction(title: "Delete", style: .default, handler: { (_) in
                 
-                Database.database().deletePost(withUID: currentLoggedInUserId, postId: post.id) { (_) in
+                Database.database().deletePost(channelName: post.channelName, withUID: currentLoggedInUserId, postId: post.id) { (_) in
                     if let postIndex = self.posts.index(where: {$0.id == post.id}) {
                         self.posts.remove(at: postIndex)
                         self.collectionView?.reloadData()
@@ -94,6 +99,15 @@ class HomePostCellViewController: UICollectionViewController, HomePostCellDelega
     }
     
     
+    private func reportAction(forPost post: Post) -> UIAlertAction? {
+        let action = UIAlertAction(title: "Report", style: .destructive) { (_) in
+            
+            let uid = post.user.uid
+            Database.database().reference().child("reports").child(uid).updateChildValues([post.id : true])
+        }
+        return action
+    }
+    
     func didBookMark(for cell: UICollectionViewCell) {
         guard let indexPath = collectionView?.indexPath(for: cell) else { return }
         guard let uid = Auth.auth().currentUser?.uid else { return }
@@ -102,6 +116,7 @@ class HomePostCellViewController: UICollectionViewController, HomePostCellDelega
         
         if post.bookMarkedByCurrentUser {
             Database.database().reference().child("bookMarks").child(uid).child(post.channelName).child(post.id).removeValue { (err, _) in
+                Database.database().reference().child("likes").child(post.id).child(uid).child("bookMark").removeValue { (err, _) in
                 if let err = err {
                     print("Failed to unlike post:", err)
                     return
@@ -111,10 +126,12 @@ class HomePostCellViewController: UICollectionViewController, HomePostCellDelega
                 UIView.performWithoutAnimation {
                     self.collectionView?.reloadItems(at: [indexPath])
                 }
-            }
+                }}
         } else {
+            let valueLike = ["bookMark" : 1]
             let values = ["authorId" : post.user.uid]
             Database.database().reference().child("bookMarks").child(uid).child(post.channelName).child(post.id).updateChildValues(values) { (err, _) in
+                 Database.database().reference().child("likes").child(post.id).child(uid).updateChildValues(valueLike) { (err, _) in
                 if let err = err {
                     print("Failed to like post:", err)
                     return
@@ -124,11 +141,35 @@ class HomePostCellViewController: UICollectionViewController, HomePostCellDelega
                 UIView.performWithoutAnimation {
                     self.collectionView?.reloadItems(at: [indexPath])
                 }
-            }
+                }}
         }
     }
     
+    func didSave(for cell: UICollectionViewCell) {
+        print("did Save was called")
+        
+        let targetHomeCell = cell as! HomePostCell
+        let targetImage = targetHomeCell.photoImageView.image
 
+        UIImageWriteToSavedPhotosAlbum(targetImage!, savedAlert(), nil, nil)
+    }
+    
+    func savedAlert(){
+        
+        print("save Alert was called")
+        let alertController = UIAlertController(title: "Foto", message: "wurde gespeichert!", preferredStyle: .alert)
+        
+        let OKAction = UIAlertAction(title: "OK", style: .default) { (action:UIAlertAction!) in
+            
+            // Code in this block will trigger when OK button tapped.
+            print("Saved");
+            
+        }
+        
+        alertController.addAction(OKAction)
+        
+        self.present(alertController, animated: true, completion:nil)
+    }
     
     func didLike(for cell: UICollectionViewCell) {
         guard let indexPath = collectionView?.indexPath(for: cell) else { return }
@@ -137,7 +178,7 @@ class HomePostCellViewController: UICollectionViewController, HomePostCellDelega
         var post = posts[indexPath.item]
         
         if post.likedByCurrentUser {
-            Database.database().reference().child("likes").child(post.id).child(uid).removeValue { (err, _) in
+            Database.database().reference().child("likes").child(post.id).child(uid).child("like").removeValue { (err, _) in
                 if let err = err {
                     print("Failed to unlike post:", err)
                     return
@@ -150,8 +191,8 @@ class HomePostCellViewController: UICollectionViewController, HomePostCellDelega
                 }
             }
         } else {
-            let values = [uid : 1]
-            Database.database().reference().child("likes").child(post.id).updateChildValues(values) { (err, _) in
+            let values = ["like" : 1]
+            Database.database().reference().child("likes").child(post.id).child(uid).updateChildValues(values) { (err, _) in
                 if let err = err {
                     print("Failed to like post:", err)
                     return

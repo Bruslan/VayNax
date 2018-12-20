@@ -34,7 +34,7 @@ class HomeController: HomePostCellViewController {
     
     private func configureNavigationBar() {
         
-    navigationItem.rightBarButtonItem = UIBarButtonItem(image: #imageLiteral(resourceName: "plus_unselected").withRenderingMode(.alwaysOriginal), style: .plain, target: self, action: #selector(handleCreate))
+    navigationItem.rightBarButtonItem = UIBarButtonItem(image: #imageLiteral(resourceName: "icons8-neu-erstellen-50").withRenderingMode(.alwaysOriginal), style: .plain, target: self, action: #selector(handleCreate))
 //        navigationItem.titleView = UIImageView(image: #imageLiteral(resourceName: "logo").withRenderingMode(.alwaysOriginal))
 //        navigationItem.leftBarButtonItem = UIBarButtonItem(image: #imageLiteral(resourceName: "camera3").withRenderingMode(.alwaysOriginal), style: .plain, target: self, action: #selector(handleCamera))
 //        navigationItem.rightBarButtonItem = UIBarButtonItem(image: #imageLiteral(resourceName: "inbox").withRenderingMode(.alwaysOriginal), style: .plain, target: self, action: nil)
@@ -55,7 +55,7 @@ class HomeController: HomePostCellViewController {
     
     
     private func fetchAllPosts() {
-        showEmptyStateViewIfNeeded()
+//        showEmptyStateViewIfNeeded()
         fetchPostsForCurrentUser()
 //        fetchFollowingUserPosts()
 //        fetchDummyPost()

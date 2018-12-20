@@ -31,7 +31,7 @@ class UserProfileHeader: UICollectionViewCell {
     private let profileImageView: CustomImageView = {
         let iv = CustomImageView()
         iv.clipsToBounds = true
-        iv.contentMode = .scaleAspectFill
+        iv.contentMode = .scaleAspectFit
         iv.image = #imageLiteral(resourceName: "user")
         iv.layer.borderColor = UIColor(white: 0, alpha: 0.2).cgColor
         iv.layer.borderWidth = 0.5
@@ -58,7 +58,7 @@ class UserProfileHeader: UICollectionViewCell {
     
     private lazy var listButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setImage(#imageLiteral(resourceName: "list"), for: .normal)
+        button.setImage(#imageLiteral(resourceName: "icons8-hand_-ok-50"), for: .normal)
         button.tintColor = UIColor(white: 0, alpha: 0.2)
         button.addTarget(self, action: #selector(handleChangeToListView), for: .touchUpInside)
         return button
@@ -66,7 +66,7 @@ class UserProfileHeader: UICollectionViewCell {
     
     private let bookmarkButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setImage(#imageLiteral(resourceName: "ribbon"), for: .normal)
+        button.setImage(#imageLiteral(resourceName: "profile_selected"), for: .normal)
         button.tintColor = UIColor(white: 0, alpha: 0.2)
         return button
     }()
@@ -93,18 +93,18 @@ class UserProfileHeader: UICollectionViewCell {
     
     private func sharedInit() {
         addSubview(profileImageView)
-        profileImageView.anchor(top: topAnchor, left: leftAnchor, paddingTop: padding, paddingLeft: padding, width: 80, height: 80)
-        profileImageView.layer.cornerRadius = 80 / 2
+        
+//        profileImageView.layer.cornerRadius = 80 / 2
         
         layoutBottomToolbar()
+        profileImageView.anchor(top: topAnchor, left: leftAnchor, bottom: gridButton.topAnchor, right: rightAnchor)
+//        addSubview(usernameLabel)
+//        usernameLabel.anchor(top: profileImageView.bottomAnchor, left: leftAnchor, bottom: gridButton.topAnchor, right: rightAnchor, paddingTop: 4, paddingLeft: padding, paddingRight: padding)
         
-        addSubview(usernameLabel)
-        usernameLabel.anchor(top: profileImageView.bottomAnchor, left: leftAnchor, bottom: gridButton.topAnchor, right: rightAnchor, paddingTop: 4, paddingLeft: padding, paddingRight: padding)
+//        layoutUserStatsView()
         
-        layoutUserStatsView()
-        
-        addSubview(followButton)
-        followButton.anchor(top: postsLabel.bottomAnchor, left: postsLabel.leftAnchor, right: followingLabel.rightAnchor, paddingTop: 2, height: 34)
+//        addSubview(followButton)
+//        followButton.anchor(top: postsLabel.bottomAnchor, left: postsLabel.leftAnchor, right: followingLabel.rightAnchor, paddingTop: 2, height: 34)
     }
     
     private func layoutUserStatsView() {

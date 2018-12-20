@@ -331,12 +331,23 @@ extension Database {
                 post.id = postId
                 
                 //check likes
+                
                 Database.database().reference().child("likes").child(postId).child(currentUser).observeSingleEvent(of: .value, with: { (snapshot) in
-                    if let value = snapshot.value as? Int, value == 1 {
+                    let value = snapshot.value as? NSDictionary
+                    
+                    
+                    
+                    if (value?["like"] != nil) {
                         post.likedByCurrentUser = true
-                    } else {
+                    } else{
                         post.likedByCurrentUser = false
                     }
+                    if (value?["bookMark"] != nil) {
+                        post.bookMarkedByCurrentUser = true
+                    }else{
+                        post.bookMarkedByCurrentUser = false
+                    }
+                    
                     
                     Database.database().numberOfLikesForPost(withPostId: postId, completion: { (count) in
                         post.likes = count
@@ -473,45 +484,70 @@ extension Database {
             var countervalue = 0
 
             dictionaries.forEach({ (arg0) in
-   
+                
+          
                 let (authorId, value) = arg0
                 
                 let valueDict = value as! NSDictionary
 
                 valueDict.forEach({ (postId, value) in
+                    
+                  
                    
                 let nsDict = value as! NSDictionary
                 
                 Database.database().fetchUser(withUID: authorId, completion: { (user) in
                 var feed = Post(user: user, dictionary: nsDict as! [String : Any])
                     
+                    
                     Database.database().reference().child("likes").child(postId as! String).child(uid).observeSingleEvent(of: .value, with: { (snapshot) in
-                        if let value = snapshot.value as? Int, value == 1 {
+                        let value = snapshot.value as? NSDictionary
+                        
+                        
+            
+                        if (value?["like"] != nil) {
                             feed.likedByCurrentUser = true
-                        } else {
+                        } else{
                             feed.likedByCurrentUser = false
                         }
+                        if (value?["bookMark"] != nil) {
+                            feed.bookMarkedByCurrentUser = true
+                        }else{
+                            feed.bookMarkedByCurrentUser = false
+                        }
+                        
+//                            feed.likedByCurrentUser = true
+//                        } else {
+//                            feed.likedByCurrentUser = false
+//                        }
                         
                         Database.database().numberOfLikesForPost(withPostId: postId as! String, completion: { (count) in
                             feed.likes = count
-                           
+
                             posts.append(feed)
                             countervalue += 1
+                        
+                            print(countervalue, valueDict.count)
+                            
                             if (countervalue == valueDict.count){
                                 countervalue = 0
                                 dicts += 1
                                 
+                                print(dictionaries.count, dicts)
+                                
                                 if dictionaries.count == dicts {
-                                    
+                                  
                                     completion(posts)
                                 }
                             }
                         })
+                       
                     }, withCancel: { (err) in
                         
                         cancel?(err)
                         
                     })
+                    
 
                 })
             })
@@ -547,8 +583,8 @@ extension Database {
         })}
     
     
-    func deletePost(withUID uid: String, postId: String, completion: ((Error?) -> ())? = nil) {
-        Database.database().reference().child("posts").child(uid).child(postId).removeValue { (err, _) in
+    func deletePost(channelName: String, withUID uid: String, postId: String, completion: ((Error?) -> ())? = nil) {
+        Database.database().reference().child("posts").child(channelName).child(uid).child(postId).removeValue { (err, _) in
             if let err = err {
                 print("Failed to delete post:", err)
                 completion?(err)

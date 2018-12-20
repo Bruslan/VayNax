@@ -14,6 +14,7 @@ protocol HomePostCellDelegate {
     func didTapOptions(post: Post)
     func didLike(for cell: UICollectionViewCell)
     func didBookMark(for: UICollectionViewCell)
+    func didSave(for cell: UICollectionViewCell)
 
     
     
@@ -39,7 +40,7 @@ class HomePostCell: UICollectionViewCell {
     
     let padding: CGFloat = 12
     
-    private let photoImageView: CustomImageView = {
+    let photoImageView: CustomImageView = {
         let iv = CustomImageView()
         iv.contentMode = .scaleAspectFill
         iv.clipsToBounds = true
@@ -49,7 +50,7 @@ class HomePostCell: UICollectionViewCell {
     
     private lazy var likeButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setImage(#imageLiteral(resourceName: "like_unselected").withRenderingMode(.alwaysOriginal), for: .normal)
+        button.setImage(#imageLiteral(resourceName: "icons8-schaumfinger-50").withRenderingMode(.alwaysOriginal), for: .normal)
         button.addTarget(self, action: #selector(handleLike), for: .touchUpInside)
         return button
     }()
@@ -57,28 +58,28 @@ class HomePostCell: UICollectionViewCell {
     
     private lazy var savebutton: UIButton = {
         let button = UIButton(type: .system)
-        button.setImage(#imageLiteral(resourceName: "save_shadow").withRenderingMode(.alwaysOriginal), for: .normal)
-        button.addTarget(self, action: #selector(handleLike), for: .touchUpInside)
+        button.setImage(#imageLiteral(resourceName: "icons8-speichern-50").withRenderingMode(.alwaysOriginal), for: .normal)
+        button.addTarget(self, action: #selector(handleSave), for: .touchUpInside)
         return button
     }()
     
     private lazy var commentButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setImage(#imageLiteral(resourceName: "comment").withRenderingMode(.alwaysOriginal), for: .normal)
+        button.setImage(#imageLiteral(resourceName: "icons8-sprechblase-mit-punkten-50").withRenderingMode(.alwaysOriginal), for: .normal)
         button.addTarget(self, action: #selector(handleComment), for: .touchUpInside)
         return button
     }()
     
     private let sendMessageButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setImage(#imageLiteral(resourceName: "send2").withRenderingMode(.alwaysOriginal), for: .normal)
+        button.setImage(#imageLiteral(resourceName: "icons8-speichern-50").withRenderingMode(.alwaysOriginal), for: .normal)
         button.addTarget(self, action: #selector(handleBookMark), for: .touchUpInside)
         return button
     }()
     
     private lazy var bookmarkButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setImage(#imageLiteral(resourceName: "ribbon").withRenderingMode(.alwaysOriginal), for: .normal)
+        button.setImage(#imageLiteral(resourceName: "icons8-stecknadel-50").withRenderingMode(.alwaysOriginal), for: .normal)
         button.addTarget(self, action: #selector(handleBookMark), for: .touchUpInside)
         return button
     }()
@@ -125,7 +126,7 @@ class HomePostCell: UICollectionViewCell {
     }
     
     private func setupActionButtons() {
-        let stackView = UIStackView(arrangedSubviews: [likeButton, commentButton, sendMessageButton])
+        let stackView = UIStackView(arrangedSubviews: [likeButton, commentButton, savebutton])
         stackView.distribution = .fillEqually
         stackView.alignment = .top
         stackView.spacing = 16
@@ -144,8 +145,8 @@ class HomePostCell: UICollectionViewCell {
         header.postTimeStamp.text = timeAgoDisplay
         
         photoImageView.loadImage(urlString: post.imageUrl)
-        likeButton.setImage(post.likedByCurrentUser == true ? #imageLiteral(resourceName: "like_selected").withRenderingMode(.alwaysOriginal) : #imageLiteral(resourceName: "like_unselected").withRenderingMode(.alwaysOriginal), for: .normal)
-        
+        likeButton.setImage(post.likedByCurrentUser == true ? #imageLiteral(resourceName: "icons8-schaumfinger-filled-50").withRenderingMode(.alwaysOriginal) : #imageLiteral(resourceName: "icons8-schaumfinger-50").withRenderingMode(.alwaysOriginal), for: .normal)
+        bookmarkButton.setImage(post.bookMarkedByCurrentUser == true ? #imageLiteral(resourceName: "icons8-stecknadel-filled-50").withRenderingMode(.alwaysOriginal) : #imageLiteral(resourceName: "icons8-stecknadel-50").withRenderingMode(.alwaysOriginal), for: .normal)
         
         setLikes(to: post.likes)
         setupAttributedCaption()
@@ -167,22 +168,34 @@ class HomePostCell: UICollectionViewCell {
         if value <= 0 {
             likeCounter.text = ""
         } else if value == 1 {
-            likeCounter.text = "1 like"
+            likeCounter.text = "1 halal"
         } else {
-            likeCounter.text = "\(value) likes"
+            likeCounter.text = "\(value) halals"
         }
     }
     
+    let impact = UIImpactFeedbackGenerator()
+    
     @objc private func handleLike() {
+        impact.impactOccurred()
         delegate?.didLike(for: self)
+        
+    }
+    
+    @objc private func handleSave(){
+        print("save was pressed")
+        impact.impactOccurred()
+        delegate?.didSave(for: self)
     }
     
     @objc private func handleBookMark(){
+        impact.impactOccurred()
         print("did BookMark")
         delegate?.didBookMark(for: self)
     }
     
     @objc private func handleComment() {
+        impact.impactOccurred()
         guard let post = post else { return }
         delegate?.didTapComment(post: post)
     }

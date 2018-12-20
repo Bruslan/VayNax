@@ -26,7 +26,7 @@ class MainTabBarController: UITabBarController {
         
         
         let bookMarkController = BookMarkViewController(collectionViewLayout: UICollectionViewFlowLayout())
-        let likeNavController = self.templateNavController(unselectedImage: #imageLiteral(resourceName: "like_unselected"), selectedImage: #imageLiteral(resourceName: "like_selected").withRenderingMode(.alwaysTemplate), rootViewController: bookMarkController)
+        let likeNavController = self.templateNavController(unselectedImage: #imageLiteral(resourceName: "icons8-stecknadel-50"), selectedImage: #imageLiteral(resourceName: "icons8-stecknadel-filled-50").withRenderingMode(.alwaysTemplate), rootViewController: bookMarkController)
 
         let userProfileController = UserProfileController(collectionViewLayout: UICollectionViewFlowLayout())
         let userProfileNavController = self.templateNavController(unselectedImage: #imageLiteral(resourceName: "profile_unselected"), selectedImage: #imageLiteral(resourceName: "profile_selected"), rootViewController: userProfileController)

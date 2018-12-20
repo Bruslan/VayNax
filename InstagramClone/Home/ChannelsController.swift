@@ -18,7 +18,16 @@ class ChannelsController: UITableViewController {
         tableView.separatorStyle = .none
 //        self.title = "VayChannels"
         tableView.register(ChannelCell.self, forCellReuseIdentifier: ChannelCell.cellId)
-        fetchAllChannels()
+        let refreshControl = UIRefreshControl()
+        refreshControl.addTarget(self, action: #selector(handleRefresh), for: .valueChanged)
+        tableView?.refreshControl = refreshControl
+        
+         fetchAllChannels()
+    }
+    
+    @objc private func handleRefresh() {
+        Channels.removeAll()
+         fetchAllChannels()
     }
 
     func fetchAllChannels(){
