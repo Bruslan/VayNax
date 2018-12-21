@@ -12,7 +12,70 @@ import Firebase
 class HomeController: HomePostCellViewController {
     
 
+    var fetchingMore = false
+    var endReached = false
+    let leadingScreensForBatching:CGFloat = 3.0
     
+    
+    override func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        let offsetY = scrollView.contentOffset.y
+        let contentHeight = scrollView.contentSize.height
+        if offsetY > contentHeight - scrollView.frame.size.height * leadingScreensForBatching {
+//            print("fetchingMore: ", fetchingMore, endReached)
+            if !fetchingMore && !endReached {
+                beginBatchFetch()
+            }
+        }
+    }
+    
+    func beginBatchFetch() {
+        print("fetch beginnen")
+        fetchingMore = true
+//        self.collectionView.reloadSections(IndexSet(integer: 0))
+        collectionView?.refreshControl?.beginRefreshing()
+        fetchPosts { newPosts in
+            print("bin in der Loop")
+           
+            self.posts.append(contentsOf: newPosts)
+//            self.posts.insert(newPosts, at: 0)
+            self.posts.sort(by: { (p1, p2) -> Bool in
+                return p1.creationDate.compare(p2.creationDate) == .orderedDescending
+
+            })
+           
+            self.endReached = newPosts.count == 0
+                 self.collectionView?.refreshControl?.endRefreshing()
+                self.collectionView.reloadData()
+             self.fetchingMore = false
+            
+        }
+    }
+    
+    func fetchPosts(completion:@escaping (_ posts:[Post])->()) {
+        
+        
+        guard let currentLoggedInUserId = Auth.auth().currentUser?.uid else { return }
+        
+        print("bin beim fetch posts")
+        
+        Database.database().fetchAllPostsNoUid(lastPost: posts.last,channel: ChannelName!, withUID: currentLoggedInUserId, completion: { (posts) in
+//            self.posts.append(contentsOf: posts)
+            
+//            self.posts.sort(by: { (p1, p2) -> Bool in
+//                return p1.creationDate.compare(p2.creationDate) == .orderedDescending
+//            })
+            
+            print("bin hier drinn")
+//             self.collectionView?.refreshControl?.endRefreshing()
+             return completion(posts)
+           
+        }) { (err) in
+            self.collectionView?.refreshControl?.endRefreshing()
+        }
+       
+    }
+
+
    
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -30,6 +93,7 @@ class HomeController: HomePostCellViewController {
         collectionView?.refreshControl = refreshControl
         
         fetchAllPosts()
+//        beginBatchFetch()
     }
     
     private func configureNavigationBar() {
@@ -56,9 +120,10 @@ class HomeController: HomePostCellViewController {
     
     private func fetchAllPosts() {
 //        showEmptyStateViewIfNeeded()
-        fetchPostsForCurrentUser()
+//        fetchPostsForCurrentUser()
 //        fetchFollowingUserPosts()
 //        fetchDummyPost()
+         beginBatchFetch()
     }
     
     
@@ -70,56 +135,56 @@ class HomeController: HomePostCellViewController {
         posts.append(dummyPost)
     }
     
-    private func fetchPostsForCurrentUser() {
-        guard let currentLoggedInUserId = Auth.auth().currentUser?.uid else { return }
-        
-        collectionView?.refreshControl?.beginRefreshing()
-        
-        Database.database().fetchAllPosts(channel: ChannelName!, withUID: currentLoggedInUserId, completion: { (posts) in
-            self.posts.append(contentsOf: posts)
-            
-            self.posts.sort(by: { (p1, p2) -> Bool in
-                return p1.creationDate.compare(p2.creationDate) == .orderedDescending
-            })
-          
-            self.collectionView?.reloadData()
-            self.collectionView?.refreshControl?.endRefreshing()
-        }) { (err) in
-            self.collectionView?.refreshControl?.endRefreshing()
-        }
-    }
+//    private func fetchPostsForCurrentUser() {
+//        guard let currentLoggedInUserId = Auth.auth().currentUser?.uid else { return }
+//
+//        collectionView?.refreshControl?.beginRefreshing()
+//
+//        Database.database().fetchAllPostsNoUid(channel: ChannelName!, withUID: currentLoggedInUserId, completion: { (posts) in
+//            self.posts.append(contentsOf: posts)
+//
+//            self.posts.sort(by: { (p1, p2) -> Bool in
+//                return p1.creationDate.compare(p2.creationDate) == .orderedDescending
+//            })
+//
+//            self.collectionView?.reloadData()
+//            self.collectionView?.refreshControl?.endRefreshing()
+//        }) { (err) in
+//            self.collectionView?.refreshControl?.endRefreshing()
+//        }
+//    }
     
 
     
-    private func fetchFollowingUserPosts() {
-        guard let currentLoggedInUserId = Auth.auth().currentUser?.uid else { return }
-        
-        collectionView?.refreshControl?.beginRefreshing()
-        
-        Database.database().reference().child("following").child(currentLoggedInUserId).observeSingleEvent(of: .value, with: { (snapshot) in
-            guard let userIdsDictionary = snapshot.value as? [String: Any] else { return }
-            
-            userIdsDictionary.forEach({ (uid, value) in
-                
-                Database.database().fetchAllPosts(channel: self.ChannelName!, withUID: uid, completion: { (posts) in
-                    
-                    self.posts.append(contentsOf: posts)
-                    
-                    self.posts.sort(by: { (p1, p2) -> Bool in
-                        return p1.creationDate.compare(p2.creationDate) == .orderedDescending
-                    })
-                    
-                    self.collectionView?.reloadData()
-                    self.collectionView?.refreshControl?.endRefreshing()
-                    
-                }, withCancel: { (err) in
-                    self.collectionView?.refreshControl?.endRefreshing()
-                })
-            })
-        }) { (err) in
-            self.collectionView?.refreshControl?.endRefreshing()
-        }
-    }
+//    private func fetchFollowingUserPosts() {
+//        guard let currentLoggedInUserId = Auth.auth().currentUser?.uid else { return }
+//
+//        collectionView?.refreshControl?.beginRefreshing()
+//
+//        Database.database().reference().child("following").child(currentLoggedInUserId).observeSingleEvent(of: .value, with: { (snapshot) in
+//            guard let userIdsDictionary = snapshot.value as? [String: Any] else { return }
+//
+//            userIdsDictionary.forEach({ (uid, value) in
+//
+//                Database.database().fetchAllPosts(channel: self.ChannelName!, withUID: uid, completion: { (posts) in
+//
+//                    self.posts.append(contentsOf: posts)
+//
+//                    self.posts.sort(by: { (p1, p2) -> Bool in
+//                        return p1.creationDate.compare(p2.creationDate) == .orderedDescending
+//                    })
+//
+//                    self.collectionView?.reloadData()
+//                    self.collectionView?.refreshControl?.endRefreshing()
+//
+//                }, withCancel: { (err) in
+//                    self.collectionView?.refreshControl?.endRefreshing()
+//                })
+//            })
+//        }) { (err) in
+//            self.collectionView?.refreshControl?.endRefreshing()
+//        }
+//    }
     
     override func showEmptyStateViewIfNeeded() {
         guard let currentLoggedInUserId = Auth.auth().currentUser?.uid else { return }
@@ -140,6 +205,7 @@ class HomeController: HomePostCellViewController {
     
     @objc private func handleRefresh() {
         posts.removeAll()
+        print("handle refresh")
         fetchAllPosts()
     }
     

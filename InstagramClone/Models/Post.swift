@@ -17,6 +17,7 @@ struct Post {
     let caption: String
     let creationDate: Date
     let channelName :String
+    let uid: String
     
     var likes: Int = 0
     var likedByCurrentUser = false
@@ -31,5 +32,6 @@ struct Post {
         self.channelName = dictionary["channelName"] as? String ?? ""
         let secondsFrom1970 = dictionary["creationDate"] as? Double ?? 0
         self.creationDate = Date(timeIntervalSince1970: secondsFrom1970)
+        self.uid = dictionary["uid"] as? String ?? ""
     }
 }

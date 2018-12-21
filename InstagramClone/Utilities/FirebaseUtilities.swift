@@ -203,12 +203,15 @@ extension Database {
     func createPost(channel: String, withImage image: UIImage, caption: String, completion: @escaping (Error?) -> ()) {
         guard let uid = Auth.auth().currentUser?.uid else { return }
         
-        let userPostRef = Database.database().reference().child("posts").child(channel).child(uid).childByAutoId()
+       
         
+        let userPostRef = Database.database().reference().child("posts").child(channel).child(uid).childByAutoId()
+        let autoID = userPostRef.key
+        let newPostRef = Database.database().reference().child("postsNoUID").child(channel).child(autoID!)
         guard let postId = userPostRef.key else { return }
         
         Storage.storage().uploadPostImage(image: image, filename: postId) { (postImageUrl) in
-            let values = ["channelName": channel, "imageUrl": postImageUrl, "caption": caption, "imageWidth": image.size.width, "imageHeight": image.size.height, "creationDate": Date().timeIntervalSince1970, "id": postId] as [String : Any]
+            let values = ["uid": uid, "channelName": channel, "imageUrl": postImageUrl, "caption": caption, "imageWidth": image.size.width, "imageHeight": image.size.height, "creationDate": Date().timeIntervalSince1970, "id": postId] as [String : Any]
             
             userPostRef.updateChildValues(values) { (err, ref) in
                 if let err = err {
@@ -216,7 +219,17 @@ extension Database {
                     completion(err)
                     return
                 }
-                completion(nil)
+                newPostRef.updateChildValues(values) {(err, ref) in
+                    
+                    if let err = err {
+                        print("failed to save post on no uid DB", err)
+                        completion(err)
+                        return
+                    }
+                    
+                     completion(nil)
+                }
+               
             }
         }
     }
@@ -225,10 +238,12 @@ extension Database {
         guard let uid = Auth.auth().currentUser?.uid else { return }
         
         let userPostRef = Database.database().reference().child("posts").child(channel).child(uid).childByAutoId()
+        let autoID = userPostRef.key
+        let newPostRef = Database.database().reference().child("postsNoUID").child(channel).child(autoID!)
         
         guard let postId = userPostRef.key else { return }
         
-        let values = ["channelName": channel, "imageUrl": "", "caption": caption, "imageWidth": "", "imageHeight": "", "creationDate": Date().timeIntervalSince1970, "id": postId] as [String : Any]
+        let values = ["uid": uid, "channelName": channel, "imageUrl": "", "caption": caption, "imageWidth": "", "imageHeight": "", "creationDate": Date().timeIntervalSince1970, "id": postId] as [String : Any]
             
             userPostRef.updateChildValues(values) { (err, ref) in
                 if let err = err {
@@ -236,7 +251,16 @@ extension Database {
                     completion(err)
                     return
                 }
-                completion(nil)
+                newPostRef.updateChildValues(values) {(err, ref) in
+                    
+                    if let err = err {
+                        print("failed to save post on no uid DB", err)
+                        completion(err)
+                        return
+                    }
+                    
+                    completion(nil)
+                }
             }
         
     }
@@ -491,8 +515,8 @@ extension Database {
                 let valueDict = value as! NSDictionary
 
                 valueDict.forEach({ (postId, value) in
-                    
-                  
+
+                
                    
                 let nsDict = value as! NSDictionary
                 
@@ -558,6 +582,97 @@ extension Database {
             cancel?(err)
         }}
     
+    
+    
+    
+    func fetchAllPostsNoUid(lastPost: Post?, channel: String, withUID uid: String, completion: @escaping ([Post]) -> (), withCancel cancel: ((Error) -> ())?) {
+        print("fetch all Posts aufgerufen")
+        var tempPosts = [Post]()
+        
+        
+        let ref = Database.database().reference().child("postsNoUID").child(channel)
+        var queryRef:DatabaseQuery
+        if lastPost != nil {
+            let lastTimestamp = lastPost!.creationDate.timeIntervalSince1970
+            queryRef = ref.queryOrdered(byChild: "creationDate").queryEnding(atValue: lastTimestamp).queryLimited(toLast: 10)
+        } else {
+            queryRef = ref.queryOrdered(byChild: "creationDate").queryLimited(toLast: 10)
+        }
+        
+        queryRef.observeSingleEvent(of: .value, with: { (snapshot) in
+            
+            guard let dictionaries = snapshot.value as? [String: Any] else {
+                completion([])
+                return
+            }
+            
+            var posts = [Post]()
+            var passed = 0
+            
+            print(dictionaries)
+            dictionaries.forEach({ (arg0) in
+             
+                let (postId, value) = arg0
+                let nsDict = value as! NSDictionary
+                let valKey = value as! [String : Any]
+                
+                
+                if postId != lastPost?.id {
+                    Database.database().fetchUser(withUID: valKey["uid"] as! String, completion: { (user) in
+                        var feed = Post(user: user, dictionary: nsDict as! [String : Any])
+                        
+                       
+                        Database.database().reference().child("likes").child(postId ).child(uid).observeSingleEvent(of: .value, with: { (snapshot) in
+                            let value = snapshot.value as? NSDictionary
+                            
+                            
+                            
+                            if (value?["like"] != nil) {
+                                feed.likedByCurrentUser = true
+                            } else{
+                                feed.likedByCurrentUser = false
+                            }
+                            if (value?["bookMark"] != nil) {
+                                feed.bookMarkedByCurrentUser = true
+                            }else{
+                                feed.bookMarkedByCurrentUser = false
+                            }
+                            Database.database().numberOfLikesForPost(withPostId: postId , completion: { (count) in
+                               
+                                feed.likes = count
+                                
+                                posts.append(feed)
+                                
+                                tempPosts.insert(feed, at: 0)
+                               
+                                print(passed, posts.count, dictionaries.count)
+                                if posts.count + passed == dictionaries.count {
+                                    completion(tempPosts)
+                                }
+                            })
+                            
+                        }, withCancel: { (err) in
+                            
+                            cancel?(err)
+                            
+                        })
+                    })
+                }else{
+                    if dictionaries.count == 1{
+                        completion(tempPosts)
+                    }else{
+                        passed += 1
+                    }
+                    
+                }
+
+            })
+        }) { (err) in
+            print("Failed to fetch posts:", err)
+            cancel?(err)
+        }}
+    
+    
     func fetchAllChannels(completion: @escaping ([String]) -> (), withCancel cancel: ((Error) -> ())?) {
 
         var Channels = [String]()
@@ -613,7 +728,17 @@ extension Database {
                         }
                     })
                 
-                    completion?(nil)
+                    Database.database().reference().child("postsNoUID").child(channelName).child(postId).removeValue { (err, _) in
+                        if let err = err {
+                            print("Failed to delete post:", err)
+                            completion?(err)
+                            return
+                        }
+                                
+                                completion?(nil)
+                            
+                       
+                    }
                 })
             })
         }
