@@ -269,9 +269,9 @@ extension Database {
         guard let currentLoggedInUser = Auth.auth().currentUser?.uid else { return }
         
         let ref = Database.database().reference().child("posts").child(uid).child(postId)
-        
+         print("try to observe")
         ref.observeSingleEvent(of: .value, with: { (snapshot) in
-            
+            print("snapshot fetch post .-----------------------", snapshot)
             guard let postDictionary = snapshot.value as? [String: Any] else { return }
             
             Database.database().fetchUser(withUID: uid, completion: { (user) in
@@ -295,7 +295,18 @@ extension Database {
                     cancel?(err)
                 })
             })
+        },
+                              
+                            
+               withCancel: { (err) in
+                print("lade beim cancel")
+                let dummyUser = User(uid: "String", dictionary: ["username":"Dummy"])
+                let dummyPost = Post(user: dummyUser, dictionary: ["caption":"Das ist ein Dummy post","id":"dummyPOst"])
+
+                completion(dummyPost)
+//                cancel?(err)
         })
+
     }
     
     
@@ -348,6 +359,25 @@ extension Database {
         
         ref.observeSingleEvent(of: .value, with: { (snapshot) in
             
+            print("snapshot von fetch poSt ", snapshot.value!)
+            
+            if !snapshot.hasChildren() {
+                
+                print("lade beim cancel")
+                let dummyUser = User(uid: "String", dictionary: ["username":"Kein Beitrag Hier"])
+                let dummyPost = Post(user: dummyUser, dictionary: ["caption":"Der Beitrag wurde gelöscht","id":"dummyPOst"])
+                Database.database().reference().child("bookMarks").child(currentUser).child(channel).child(postId).removeValue { (err, _) in
+                    Database.database().reference().child("likes").child(postId).child(currentUser).child("bookMark").removeValue { (err, _) in
+                        if let err = err {
+                            print("Failed to unlike post:", err)
+                            return
+                        }
+                            completion(dummyPost)
+                    }}
+                
+                
+            }
+            
             guard let postDictionary = snapshot.value as? [String: Any] else { return }
             
             Database.database().fetchUser(withUID: authorId, completion: { (user) in
@@ -380,6 +410,7 @@ extension Database {
                 }, withCancel: { (err) in
                     
                     cancel?(err)
+
                 })
             })
         })
@@ -402,6 +433,8 @@ extension Database {
             
             dictionaries.forEach({ (channelName, value) in
                 
+                print("bin hier drinn")
+                
                 let nsDict = value as! NSDictionary
                 let dict = nsDict as! [String : [String : Any]]
                 
@@ -412,13 +445,16 @@ extension Database {
                     let (postId, value) = arg0
                     
                     let authorId = value["authorId"] as! String
-                    
+                    print("bin vor der loop")
+                    print("vor der loop ",postId)
                     Database.database().fetchPost(postId: postId, channel: channelName, authorId: authorId, completion: { (Post) in
                         bookMarks.append(Post)
-                        
+                        print(Post.id)
+                        print(bookMarks.count, dict.count)
                         if bookMarks.count == dict.count{
                             chanAndPost[channelName] = bookMarks
                             bookMarks.removeAll()
+                            
                             
                             if chanAndPost.count == dictionaries.count{
                                 
@@ -430,6 +466,8 @@ extension Database {
 
                         
                     }, withCancel: { (err) in
+                        
+                        print("_--------------____-----_--_-_-_-_-______")
                         print("error by fetching Post")
                     })
                     
@@ -594,9 +632,9 @@ extension Database {
         var queryRef:DatabaseQuery
         if lastPost != nil {
             let lastTimestamp = lastPost!.creationDate.timeIntervalSince1970
-            queryRef = ref.queryOrdered(byChild: "creationDate").queryEnding(atValue: lastTimestamp).queryLimited(toLast: 10)
+            queryRef = ref.queryOrdered(byChild: "creationDate").queryEnding(atValue: lastTimestamp).queryLimited(toLast: 6)
         } else {
-            queryRef = ref.queryOrdered(byChild: "creationDate").queryLimited(toLast: 10)
+            queryRef = ref.queryOrdered(byChild: "creationDate").queryLimited(toLast: 6)
         }
         
         queryRef.observeSingleEvent(of: .value, with: { (snapshot) in
