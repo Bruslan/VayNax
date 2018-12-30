@@ -24,6 +24,12 @@ class UserProfilePhotoGridCell: UICollectionViewCell {
         iv.backgroundColor = UIColor(white: 0.95, alpha: 1)
         return iv
     }()
+    private let bioview: UITextView = {
+        
+        let tv = UITextView()
+        tv.text = "Hallo World"
+        return tv
+    }()
     
     static var cellId = "userProfilePhotoGridCellId"
     
@@ -38,7 +44,7 @@ class UserProfilePhotoGridCell: UICollectionViewCell {
     }
     
     private func sharedInit() {
-        addSubview(photoImageView)
-        photoImageView.anchor(top: topAnchor, left: leftAnchor, bottom: bottomAnchor, right: rightAnchor, paddingTop: 0, paddingLeft: 0, paddingBottom: 0, paddingRight: 0, width: 0, height: 0)
+        addSubview(bioview)
+        bioview.anchor(top: topAnchor, left: leftAnchor, bottom: bottomAnchor, right: rightAnchor, paddingTop: 0, paddingLeft: 0, paddingBottom: 0, paddingRight: 0, width: 0, height: 0)
     }
 }

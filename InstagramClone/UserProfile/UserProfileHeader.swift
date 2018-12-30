@@ -28,10 +28,11 @@ class UserProfileHeader: UICollectionViewCell {
         }
     }
     
-    private let profileImageView: CustomImageView = {
+    
+    let profileImageView: CustomImageView = {
         let iv = CustomImageView()
         iv.clipsToBounds = true
-        iv.contentMode = .scaleAspectFit
+        iv.contentMode = .scaleAspectFill
         iv.image = #imageLiteral(resourceName: "user")
         iv.layer.borderColor = UIColor(white: 0, alpha: 0.2).cgColor
         iv.layer.borderWidth = 0.5

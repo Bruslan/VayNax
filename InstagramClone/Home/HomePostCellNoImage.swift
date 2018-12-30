@@ -55,10 +55,32 @@ class HomePostCellNoImage: UICollectionViewCell {
         return button
     }()
     
+    private lazy var dislikeButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(#imageLiteral(resourceName: "icons8-schaumfinger-50").withRenderingMode(.alwaysOriginal), for: .normal)
+        button.addTarget(self, action: #selector(handleDislike), for: .touchUpInside)
+        button.transform = CGAffineTransform(scaleX: -1, y: -1);
+        return button
+    }()
+    
     private let likeCounter: UILabel = {
         let label = UILabel()
         label.font = UIFont.boldSystemFont(ofSize: 14)
-        label.textColor = .black
+        label.textColor = .green
+        return label
+    }()
+    
+    private let commentCounter: UILabel = {
+        let label = UILabel()
+        label.font = UIFont.boldSystemFont(ofSize: 14)
+        label.textColor = .gray
+        return label
+    }()
+    
+    private let dislikeCounter: UILabel = {
+        let label = UILabel()
+        label.font = UIFont.boldSystemFont(ofSize: 14)
+        label.textColor = .red
         return label
     }()
     
@@ -89,13 +111,20 @@ class HomePostCellNoImage: UICollectionViewCell {
         
         likeCounter.anchor(top: likeButton.bottomAnchor, left: leftAnchor, paddingTop: padding, paddingLeft: padding)
         
+        addSubview(dislikeCounter)
+        dislikeCounter.anchor(top: dislikeButton.bottomAnchor, left: dislikeButton.leftAnchor,  right: dislikeButton.rightAnchor, paddingTop: padding)
+
+        addSubview(commentCounter)
+        commentCounter.anchor(top: commentButton.bottomAnchor, left: commentButton.leftAnchor, paddingTop: padding)
        
         captionLabel.anchor(top: header.bottomAnchor, left: leftAnchor, right: rightAnchor, paddingTop: padding - 6, paddingLeft: padding, paddingRight: padding)
+        
+        
         
     }
     
     private func setupActionButtons() {
-        let stackView = UIStackView(arrangedSubviews: [likeButton, commentButton])
+        let stackView = UIStackView(arrangedSubviews: [likeButton, dislikeButton, commentButton])
         stackView.distribution = .fillEqually
         stackView.alignment = .top
         stackView.spacing = 16
@@ -112,6 +141,8 @@ class HomePostCellNoImage: UICollectionViewCell {
         
         addSubview(bookmarkButton)
         bookmarkButton.anchor(top: seperatorView.bottomAnchor, right: rightAnchor, paddingTop: padding, paddingRight: padding)
+        
+      
     }
     
     private func configurePost() {
@@ -121,8 +152,13 @@ class HomePostCellNoImage: UICollectionViewCell {
         header.postTimeStamp.text = timeAgoDisplay
         
         likeButton.setImage(post.likedByCurrentUser == true ? #imageLiteral(resourceName: "icons8-schaumfinger-filled-50").withRenderingMode(.alwaysOriginal) : #imageLiteral(resourceName: "icons8-schaumfinger-50").withRenderingMode(.alwaysOriginal), for: .normal)
+        dislikeButton.setImage(post.dislikedByCurrentUser == true ? #imageLiteral(resourceName: "icons8-schaumfinger-filled-50").withRenderingMode(.alwaysOriginal) : #imageLiteral(resourceName: "icons8-schaumfinger-50").withRenderingMode(.alwaysOriginal), for: .normal)
           bookmarkButton.setImage(post.bookMarkedByCurrentUser == true ? #imageLiteral(resourceName: "icons8-stecknadel-filled-50").withRenderingMode(.alwaysOriginal) : #imageLiteral(resourceName: "icons8-stecknadel-50").withRenderingMode(.alwaysOriginal), for: .normal)
         setLikes(to: post.likes)
+        setDislikes(to: post.dislikes)
+        
+        setCommentCount(to: post.commentCount)
+        print("comment count", post.commentCount)
         setupAttributedCaption()
     }
     
@@ -137,9 +173,30 @@ class HomePostCellNoImage: UICollectionViewCell {
         if value <= 0 {
             likeCounter.text = ""
         } else if value == 1 {
-            likeCounter.text = "1 halal"
+            likeCounter.text = "1"
         } else {
-            likeCounter.text = "\(value) halals"
+            likeCounter.text = "\(value)"
+        }
+    }
+    
+    private func setCommentCount(to value: Int) {
+        if value <= 0 {
+            commentCounter.text = ""
+        } else if value == 1 {
+            commentCounter.text = "1 Comment"
+        } else {
+            commentCounter.text = "\(value) Comments"
+        }
+    }
+    
+    
+    private func setDislikes(to value: Int) {
+        if value <= 0 {
+            dislikeCounter.text = ""
+        } else if value == 1 {
+            dislikeCounter.text = "1"
+        } else {
+            dislikeCounter.text = "\(value)"
         }
     }
     let impact = UIImpactFeedbackGenerator()
@@ -156,11 +213,19 @@ class HomePostCellNoImage: UICollectionViewCell {
         delegate?.didLike(for: self)
     }
     
+    @objc private func handleDislike() {
+        impact.impactOccurred()
+        delegate?.didDislike(for: self)
+        
+    }
+    
     @objc private func handleComment() {
         impact.impactOccurred()
         guard let post = post else { return }
         delegate?.didTapComment(post: post)
     }
+    
+    
 }
 
 //MARK: - HomePostCellHeaderDelegate

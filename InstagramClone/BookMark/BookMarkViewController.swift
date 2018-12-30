@@ -46,7 +46,6 @@ class BookMarkViewController: HomePostCellViewController, UICollectionViewDelega
          self.collectionView?.refreshControl?.beginRefreshing()
         Database.database().fetchAllBookMarksForUser(completion: { (favPosts) in
 
-            print("Bookmarks fetched")
             favPosts.forEach({ (arg0) in
 
                 let (_, postsArray) = arg0
@@ -73,6 +72,7 @@ class BookMarkViewController: HomePostCellViewController, UICollectionViewDelega
 
         navigationItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
         navigationItem.backBarButtonItem?.tintColor = .black
+        navigationItem.title = "Favorites"
 
     }
     

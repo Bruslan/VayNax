@@ -16,7 +16,7 @@ class ChannelsController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         tableView.separatorStyle = .none
-//        self.title = "VayChannels"
+//        self.title = "VayChannels"       
         tableView.register(ChannelCell.self, forCellReuseIdentifier: ChannelCell.cellId)
         let refreshControl = UIRefreshControl()
         refreshControl.addTarget(self, action: #selector(handleRefresh), for: .valueChanged)

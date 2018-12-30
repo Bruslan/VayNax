@@ -154,7 +154,7 @@ class NewSharePhotoController:  UICollectionViewController, UINavigationControll
         
         if postImage != nil {
            
-            Database.database().createPost(channel: currentChannel!,  withImage: postImage!, caption: caption) { (err) in
+            Database.database().createPost(anonym: anonymBool, channel: currentChannel!,  withImage: postImage!, caption: caption) { (err) in
                 if err != nil {
                     self.navigationItem.rightBarButtonItem?.isEnabled = true
                     self.textView.isUserInteractionEnabled = true
@@ -168,7 +168,7 @@ class NewSharePhotoController:  UICollectionViewController, UINavigationControll
         }
             
         else{
-            Database.database().createPost(channel: currentChannel!, caption: caption) { (err) in
+            Database.database().createPost(anonym: anonymBool, channel: currentChannel!, caption: caption) { (err) in
                 if err != nil {
                     self.navigationItem.rightBarButtonItem?.isEnabled = true
                     self.textView.isUserInteractionEnabled = true

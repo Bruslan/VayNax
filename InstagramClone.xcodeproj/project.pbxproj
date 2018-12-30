@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		89429F1B21D3C44A00325E4B /* StreatchyHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89429F1A21D3C44A00325E4B /* StreatchyHeader.swift */; };
 		898BD56D21B80ED800F70E0D /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 898BD56C21B80ED800F70E0D /* GoogleService-Info.plist */; };
 		898BD56F21B821E400F70E0D /* NewShareController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 898BD56E21B821E400F70E0D /* NewShareController.swift */; };
 		898BD57121B8250300F70E0D /* HomePostCellNoImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 898BD57021B8250300F70E0D /* HomePostCellNoImage.swift */; };
@@ -53,6 +54,7 @@
 
 /* Begin PBXFileReference section */
 		09578B8F3D737CD5AC684ECA /* Pods-InstagramClone.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-InstagramClone.release.xcconfig"; path = "Pods/Target Support Files/Pods-InstagramClone/Pods-InstagramClone.release.xcconfig"; sourceTree = "<group>"; };
+		89429F1A21D3C44A00325E4B /* StreatchyHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreatchyHeader.swift; sourceTree = "<group>"; };
 		898BD56C21B80ED800F70E0D /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		898BD56E21B821E400F70E0D /* NewShareController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewShareController.swift; sourceTree = "<group>"; };
 		898BD57021B8250300F70E0D /* HomePostCellNoImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomePostCellNoImage.swift; sourceTree = "<group>"; };
@@ -238,6 +240,7 @@
 				ADE95AF6210D1D6E003D9A54 /* UserProfilePhotoGridCell.swift */,
 				AD4D8CF02060827500A49BA4 /* UserProfileHeader.swift */,
 				AD2CC6D5211FA0C40091E7D9 /* UserProfileEmptyStateCell.swift */,
+				89429F1A21D3C44A00325E4B /* StreatchyHeader.swift */,
 			);
 			path = UserProfile;
 			sourceTree = "<group>";
@@ -414,6 +417,7 @@
 				ADE95AF5210D1B8E003D9A54 /* Post.swift in Sources */,
 				AD215F16205DA9B6000E42AD /* Extensions.swift in Sources */,
 				ADAC080B21102E8D00615E62 /* UserSearchController.swift in Sources */,
+				89429F1B21D3C44A00325E4B /* StreatchyHeader.swift in Sources */,
 				ADE95AF7210D1D6E003D9A54 /* UserProfilePhotoGridCell.swift in Sources */,
 				AD32EF772114E21900BB7B56 /* CustomAnimationPresentor.swift in Sources */,
 				AD2CC6D6211FA0C40091E7D9 /* UserProfileEmptyStateCell.swift in Sources */,

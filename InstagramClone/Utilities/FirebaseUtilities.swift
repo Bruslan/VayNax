@@ -32,7 +32,7 @@ extension Auth {
         })
     }
     
-    private func uploadUser(withUID uid: String, username: String, profileImageUrl: String? = nil, completion: @escaping (() -> ())) {
+     func uploadUser(withUID uid: String, username: String, profileImageUrl: String? = nil, completion: @escaping (() -> ())) {
         var dictionaryValues = ["username": username]
         if profileImageUrl != nil {
             dictionaryValues["profileImageUrl"] = profileImageUrl
@@ -51,8 +51,8 @@ extension Auth {
 
 extension Storage {
     
-    fileprivate func uploadUserProfileImage(image: UIImage, completion: @escaping (String) -> ()) {
-        guard let uploadData = image.jpegData(compressionQuality: 0.1) else { return } //changed from 0.3
+    func uploadUserProfileImage(image: UIImage, completion: @escaping (String) -> ()) {
+        guard let uploadData = image.jpegData(compressionQuality: 0.5) else { return } //changed from 0.3
         
         let storageRef = Storage.storage().reference().child("profile_images").child(NSUUID().uuidString)
         
@@ -72,9 +72,24 @@ extension Storage {
             })
         })
     }
+    func deleteProfileImage(image: UIImage, completion: @escaping (String) -> ()) {
+    
+        
+        let url = ""
+        
+        let storageRef =  Storage.storage().reference(forURL: url)
+        
+        storageRef.delete { error in
+            if let error = error {
+                print(error)
+            } else {
+                // File deleted successfully
+            }
+        }
+    }
     
     fileprivate func uploadPostImage(image: UIImage, filename: String, completion: @escaping (String) -> ()) {
-        guard let uploadData = image.jpegData(compressionQuality: 0.1) else { return } //changed from 0.5
+        guard let uploadData = image.jpegData(compressionQuality: 0.5) else { return } //changed from 0.5
         
         let storageRef = Storage.storage().reference().child("post_images").child(filename)
         storageRef.putData(uploadData, metadata: nil, completion: { (_, err) in
@@ -200,19 +215,39 @@ extension Database {
     
     //MARK: Posts
     
-    func createPost(channel: String, withImage image: UIImage, caption: String, completion: @escaping (Error?) -> ()) {
+    func createPost(anonym: Bool, channel: String, withImage image: UIImage, caption: String, completion: @escaping (Error?) -> ()) {
         guard let uid = Auth.auth().currentUser?.uid else { return }
         
        
         
-        let userPostRef = Database.database().reference().child("posts").child(channel).child(uid).childByAutoId()
-        let autoID = userPostRef.key
-        let newPostRef = Database.database().reference().child("postsNoUID").child(channel).child(autoID!)
-        guard let postId = userPostRef.key else { return }
+        var userPostRef = Database.database().reference().child("posts").child(channel).child("4MQvhMjLqHWg5oODvmA28KdCzCI3").childByAutoId()
+  
+        guard var postId = userPostRef.key else { return }
         
+     
         Storage.storage().uploadPostImage(image: image, filename: postId) { (postImageUrl) in
-            let values = ["uid": uid, "channelName": channel, "imageUrl": postImageUrl, "caption": caption, "imageWidth": image.size.width, "imageHeight": image.size.height, "creationDate": Date().timeIntervalSince1970, "id": postId] as [String : Any]
             
+            var values = [String: Any]()
+            if anonym {
+
+                 values = ["anonymeUID": "4MQvhMjLqHWg5oODvmA28KdCzCI3", "uid": uid, "channelName": channel, "imageUrl": postImageUrl, "caption": caption, "imageWidth": image.size.width, "imageHeight": image.size.height, "creationDate": Date().timeIntervalSince1970, "id": postId] as [String : Any]
+                
+            }else{
+                
+               
+                
+               
+                userPostRef = Database.database().reference().child("posts").child(channel).child(uid).childByAutoId()
+                
+                 postId = userPostRef.key!
+                 values = ["anonymeUID": uid,"uid": uid, "channelName": channel, "imageUrl": postImageUrl, "caption": caption, "imageWidth": image.size.width, "imageHeight": image.size.height, "creationDate": Date().timeIntervalSince1970, "id": postId] as [String : Any]
+                
+            }
+            
+           
+            let newPostRef =  Database.database().reference().child("postsNoUID").child(channel).child(postId)
+            
+
             userPostRef.updateChildValues(values) { (err, ref) in
                 if let err = err {
                     print("Failed to save post to database", err)
@@ -234,17 +269,30 @@ extension Database {
         }
     }
     
-    func createPost(channel: String, caption: String, completion: @escaping (Error?) -> ()) {
+    func createPost(anonym: Bool, channel: String, caption: String, completion: @escaping (Error?) -> ()) {
         guard let uid = Auth.auth().currentUser?.uid else { return }
+        print("post try ")
         
-        let userPostRef = Database.database().reference().child("posts").child(channel).child(uid).childByAutoId()
-        let autoID = userPostRef.key
-        let newPostRef = Database.database().reference().child("postsNoUID").child(channel).child(autoID!)
+        var userPostRef =  Database.database().reference().child("posts").child(channel).child("4MQvhMjLqHWg5oODvmA28KdCzCI3").childByAutoId()
+        guard var postId = userPostRef.key else { return }
+
         
-        guard let postId = userPostRef.key else { return }
+        var values = [String: Any]()
+        if anonym {
+       
+
+          values = ["anonymeUID": "4MQvhMjLqHWg5oODvmA28KdCzCI3", "uid": uid, "channelName": channel, "imageUrl": "", "caption": caption, "imageWidth": "", "imageHeight": "", "creationDate": Date().timeIntervalSince1970, "id": postId] as [String : Any]
+            print("lande im anonym")
+        }else{
+        userPostRef = Database.database().reference().child("posts").child(channel).child(uid).childByAutoId()
+        postId = userPostRef.key!
+        values = ["anonymeUID": uid, "uid": uid, "channelName": channel, "imageUrl": "", "caption": caption, "imageWidth": "", "imageHeight": "", "creationDate": Date().timeIntervalSince1970, "id": postId] as [String : Any]
+        }
         
-        let values = ["uid": uid, "channelName": channel, "imageUrl": "", "caption": caption, "imageWidth": "", "imageHeight": "", "creationDate": Date().timeIntervalSince1970, "id": postId] as [String : Any]
-            
+     
+       
+        let newPostRef = Database.database().reference().child("postsNoUID").child(channel).child(postId)
+        
             userPostRef.updateChildValues(values) { (err, ref) in
                 if let err = err {
                     print("Failed to save post to database", err)
@@ -287,7 +335,7 @@ extension Database {
                     }
                     
                     Database.database().numberOfLikesForPost(withPostId: postId, completion: { (count) in
-                        post.likes = count
+                        post.likes = count["likesCount"] as! Int
                         completion(post)
                     })
                 }, withCancel: { (err) in
@@ -299,12 +347,11 @@ extension Database {
                               
                             
                withCancel: { (err) in
-                print("lade beim cancel")
-                let dummyUser = User(uid: "String", dictionary: ["username":"Dummy"])
-                let dummyPost = Post(user: dummyUser, dictionary: ["caption":"Das ist ein Dummy post","id":"dummyPOst"])
-
-                completion(dummyPost)
-//                cancel?(err)
+//                let dummyUser = User(uid: "String", dictionary: ["username":"Dummy"])
+//                let dummyPost = Post(user: dummyUser, dictionary: ["caption":"Das ist ein Dummy post","id":"dummyPOst"])
+//
+//                completion(dummyPost)
+                cancel?(err)
         })
 
     }
@@ -359,11 +406,8 @@ extension Database {
         
         ref.observeSingleEvent(of: .value, with: { (snapshot) in
             
-            print("snapshot von fetch poSt ", snapshot.value!)
-            
             if !snapshot.hasChildren() {
-                
-                print("lade beim cancel")
+
                 let dummyUser = User(uid: "String", dictionary: ["username":"Kein Beitrag Hier"])
                 let dummyPost = Post(user: dummyUser, dictionary: ["caption":"Der Beitrag wurde gelöscht","id":"dummyPOst"])
                 Database.database().reference().child("bookMarks").child(currentUser).child(channel).child(postId).removeValue { (err, _) in
@@ -404,7 +448,10 @@ extension Database {
                     
                     
                     Database.database().numberOfLikesForPost(withPostId: postId, completion: { (count) in
-                        post.likes = count
+                        post.likes = count["likesCount"] as? Int ?? 0
+                        post.dislikes = count["dislikeCount"] as? Int ?? 0
+                        
+                        
                         completion(post)
                     })
                 }, withCancel: { (err) in
@@ -433,8 +480,7 @@ extension Database {
             
             dictionaries.forEach({ (channelName, value) in
                 
-                print("bin hier drinn")
-                
+             
                 let nsDict = value as! NSDictionary
                 let dict = nsDict as! [String : [String : Any]]
                 
@@ -445,12 +491,10 @@ extension Database {
                     let (postId, value) = arg0
                     
                     let authorId = value["authorId"] as! String
-                    print("bin vor der loop")
-                    print("vor der loop ",postId)
+         
                     Database.database().fetchPost(postId: postId, channel: channelName, authorId: authorId, completion: { (Post) in
                         bookMarks.append(Post)
-                        print(Post.id)
-                        print(bookMarks.count, dict.count)
+                    
                         if bookMarks.count == dict.count{
                             chanAndPost[channelName] = bookMarks
                             bookMarks.removeAll()
@@ -461,13 +505,8 @@ extension Database {
                                 completion(chanAndPost)
                             }
                         }
-                        
-                        
-
-                        
                     }, withCancel: { (err) in
-                        
-                        print("_--------------____-----_--_-_-_-_-______")
+          
                         print("error by fetching Post")
                     })
                     
@@ -507,7 +546,7 @@ extension Database {
                         }
                         
                         Database.database().numberOfLikesForPost(withPostId: postId, completion: { (count) in
-                            feed.likes = count
+                            feed.likes = count["likesCount"] as! Int
                             
                             posts.append(feed)
                             
@@ -561,7 +600,9 @@ extension Database {
                 Database.database().fetchUser(withUID: authorId, completion: { (user) in
                 var feed = Post(user: user, dictionary: nsDict as! [String : Any])
                     
-                    
+                    Database.database().numberOfCommentsForPost(withPostId: postId as! String, completion: { (count) in
+                        feed.commentCount = count
+                
                     Database.database().reference().child("likes").child(postId as! String).child(uid).observeSingleEvent(of: .value, with: { (snapshot) in
                         let value = snapshot.value as? NSDictionary
                         
@@ -584,7 +625,7 @@ extension Database {
 //                        }
                         
                         Database.database().numberOfLikesForPost(withPostId: postId as! String, completion: { (count) in
-                            feed.likes = count
+                            feed.likes = count["likesCount"] as! Int
 
                             posts.append(feed)
                             countervalue += 1
@@ -609,6 +650,7 @@ extension Database {
                         cancel?(err)
                         
                     })
+                            })
                     
 
                 })
@@ -622,12 +664,9 @@ extension Database {
     
     
     
-    
     func fetchAllPostsNoUid(lastPost: Post?, channel: String, withUID uid: String, completion: @escaping ([Post]) -> (), withCancel cancel: ((Error) -> ())?) {
         print("fetch all Posts aufgerufen")
         var tempPosts = [Post]()
-        
-        
         let ref = Database.database().reference().child("postsNoUID").child(channel)
         var queryRef:DatabaseQuery
         if lastPost != nil {
@@ -653,13 +692,14 @@ extension Database {
                 let (postId, value) = arg0
                 let nsDict = value as! NSDictionary
                 let valKey = value as! [String : Any]
-                
-                
+      
                 if postId != lastPost?.id {
-                    Database.database().fetchUser(withUID: valKey["uid"] as! String, completion: { (user) in
+                    Database.database().fetchUser(withUID: valKey["anonymeUID"] as! String, completion: { (user) in
                         var feed = Post(user: user, dictionary: nsDict as! [String : Any])
                         
-                       
+                        Database.database().numberOfCommentsForPost(withPostId: postId as! String, completion: { (count) in
+                            feed.commentCount = count
+                            
                         Database.database().reference().child("likes").child(postId ).child(uid).observeSingleEvent(of: .value, with: { (snapshot) in
                             let value = snapshot.value as? NSDictionary
                             
@@ -675,9 +715,16 @@ extension Database {
                             }else{
                                 feed.bookMarkedByCurrentUser = false
                             }
-                            Database.database().numberOfLikesForPost(withPostId: postId , completion: { (count) in
+                            
+                            if (value?["dislike"] != nil) {
+                                feed.dislikedByCurrentUser = true
+                            }else{
+                                feed.dislikedByCurrentUser = false
+                            }
+                            Database.database().numberOfLikesForPost(withPostId: postId , completion: { (dict) in
                                
-                                feed.likes = count
+                                feed.likes = dict["likesCount"] as? Int ?? 0
+                                feed.dislikes = dict["dislikeCount"] as? Int ?? 0
                                 
                                 posts.append(feed)
                                 
@@ -693,6 +740,7 @@ extension Database {
                             
                             cancel?(err)
                             
+                        })
                         })
                     })
                 }else{
@@ -863,9 +911,21 @@ extension Database {
         }
     }
     
-    func numberOfLikesForPost(withPostId postId: String, completion: @escaping (Int) -> ()) {
-        Database.database().reference().child("likes").child(postId).observeSingleEvent(of: .value) { (snapshot) in
+    func numberOfLikesForPost(withPostId postId: String, completion: @escaping ([String: Any] ) -> ()) {
+        Database.database().reference().child("likes").child(postId).child("counts").observeSingleEvent(of: .value) { (snapshot) in
             if let dictionaries = snapshot.value as? [String: Any] {
+                completion(dictionaries)
+            } else {
+                completion(["likesCount": 0] )
+            }
+        }
+    }
+    
+    func numberOfCommentsForPost(withPostId postId: String, completion: @escaping (Int ) -> ()) {
+        Database.database().reference().child("comments").child(postId).observeSingleEvent(of: .value) { (snapshot) in
+            if let dictionaries = snapshot.value as? [String: Any] {
+                
+                print("---------sdasdasdad-------------",dictionaries)
                 completion(dictionaries.count)
             } else {
                 completion(0)

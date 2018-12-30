@@ -9,7 +9,7 @@
 import UIKit
 import Firebase
 
-class UserProfileController: HomePostCellViewController {
+class UserProfileController: HomePostCellViewController, UINavigationControllerDelegate {
     
     var user: User? {
         didSet {
@@ -63,10 +63,26 @@ class UserProfileController: HomePostCellViewController {
                 print("Failed to sign out:", err)
             }
         }
+        
         alertController.addAction(logOutAction)
+        
+        let changeProfilePicture = UIAlertAction(title: "Change Profile Picture", style: .default){ (_) in
+          
+                self.handlePlusPhoto()
+
+        }
+        
+        alertController.addAction(changeProfilePicture)
         
         let deleteAccountAction = UIAlertAction(title: "Delete Account", style: .destructive, handler: nil)
         alertController.addAction(deleteAccountAction)
+    }
+    
+    func handlePlusPhoto() {
+        let imagePickerController = UIImagePickerController()
+        imagePickerController.delegate = self 
+        imagePickerController.allowsEditing = true
+        present(imagePickerController, animated: true, completion: nil)
     }
     
     private func configureUser() {
@@ -258,3 +274,42 @@ extension UserProfileController: UserProfileHeaderDelegate {
     }
 }
 
+
+extension UserProfileController: UIImagePickerControllerDelegate {
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+        // Local variable inserted by Swift 4.2 migrator.
+
+        let info = convertFromUIImagePickerControllerInfoKeyDictionary(info)
+        
+        if let editedImage = info["UIImagePickerControllerEditedImage"] as? UIImage {
+            print("edited wurde aufgerufen")
+
+            Storage.storage().uploadUserProfileImage(image: editedImage, completion: { (profileImageUrl) in
+                Auth.auth().uploadUser(withUID: (self.user?.uid)!, username: (self.user?.username)!, profileImageUrl: profileImageUrl) {
+                    Database.database().fetchUser(withUID: (self.user?.uid)!) { (user) in
+                        self.user = user
+                    }
+                    self.configureUser()
+                    self.header?.reloadData()
+                }
+            })
+        } else if let originalImage = info["UIImagePickerControllerOriginalImage"] as? UIImage {
+             print("original wurde aufgerufen")
+            Storage.storage().uploadUserProfileImage(image: originalImage, completion: { (profileImageUrl) in
+                Auth.auth().uploadUser(withUID: (self.user?.uid)!, username: (self.user?.username)!, profileImageUrl: profileImageUrl) {
+                    Database.database().fetchUser(withUID: (self.user?.uid)!) { (user) in
+                        self.user = user
+                    }
+                    self.configureUser()
+                    self.header?.reloadData()
+                }
+            })
+        }
+        dismiss(animated: true, completion: nil)
+    }
+}
+
+// Helper function inserted by Swift 4.2 migrator.
+fileprivate func convertFromUIImagePickerControllerInfoKeyDictionary(_ input: [UIImagePickerController.InfoKey: Any]) -> [String: Any] {
+    return Dictionary(uniqueKeysWithValues: input.map {key, value in (key.rawValue, value)})
+}

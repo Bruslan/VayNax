@@ -11,10 +11,6 @@ import Firebase
 
 class HomePostCellViewController: UICollectionViewController, HomePostCellDelegate {
 
-    
-
-    
-
     var ChannelName: String? {
         didSet {
             
@@ -47,7 +43,7 @@ class HomePostCellViewController: UICollectionViewController, HomePostCellDelega
         let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
         alertController.addAction(cancelAction)
         
-        if currentLoggedInUserId == post.user.uid {
+        if currentLoggedInUserId == post.uid {
             if let deleteAction = deleteAction(forPost: post) {
                 alertController.addAction(deleteAction)
             }
@@ -63,15 +59,14 @@ class HomePostCellViewController: UICollectionViewController, HomePostCellDelega
     }
     
     private func deleteAction(forPost post: Post) -> UIAlertAction? {
-        guard let currentLoggedInUserId = Auth.auth().currentUser?.uid else { return nil }
-        
+       
         let action = UIAlertAction(title: "Delete", style: .destructive, handler: { (_) in
             
             let alert = UIAlertController(title: "Delete Post?", message: nil, preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
             alert.addAction(UIAlertAction(title: "Delete", style: .default, handler: { (_) in
-                
-                Database.database().deletePost(channelName: post.channelName, withUID: currentLoggedInUserId, postId: post.id) { (_) in
+              
+                Database.database().deletePost(channelName: post.channelName, withUID: post.realUID, postId: post.id) { (_) in
                     if let postIndex = self.posts.index(where: {$0.id == post.id}) {
                         self.posts.remove(at: postIndex)
                         self.collectionView?.reloadData()
@@ -146,8 +141,7 @@ class HomePostCellViewController: UICollectionViewController, HomePostCellDelega
     }
     
     func didSave(for cell: UICollectionViewCell) {
-        print("did Save was called")
-        
+
         let targetHomeCell = cell as! HomePostCell
         let targetImage = targetHomeCell.photoImageView.image
 
@@ -177,7 +171,16 @@ class HomePostCellViewController: UICollectionViewController, HomePostCellDelega
         
         var post = posts[indexPath.item]
         
+        let myLikesRef = Database.database().reference().child("likes").child(post.id)
+        
+        myLikesRef.child(uid).observeSingleEvent(of: .value, with: { (DataSnapshot) in
+            let dict = DataSnapshot.value as? [String: Any]
+            
         if post.likedByCurrentUser {
+            
+            
+        
+            
             Database.database().reference().child("likes").child(post.id).child(uid).child("like").removeValue { (err, _) in
                 if let err = err {
                     print("Failed to unlike post:", err)
@@ -186,26 +189,195 @@ class HomePostCellViewController: UICollectionViewController, HomePostCellDelega
                 post.likedByCurrentUser = false
                 post.likes = post.likes - 1
                 self.posts[indexPath.item] = post
-                UIView.performWithoutAnimation {
-                    self.collectionView?.reloadItems(at: [indexPath])
-                }
+            
+                
+
+                myLikesRef.child("counts").observeSingleEvent(of: .value, with: { (DataSnapshot) in
+                    let count = DataSnapshot.value as? [String: Any]
+                    
+                    let newLikesCount = (count!["likesCount"] as? Int ?? 0) - 1
+                    
+                    
+                    myLikesRef.child("counts").updateChildValues(["likesCount": newLikesCount])
+                    UIView.performWithoutAnimation {
+                        self.collectionView?.reloadItems(at: [indexPath])
+                    }
+                })
+                
             }
+                
         } else {
+            
+            post.likedByCurrentUser = true
+            post.dislikedByCurrentUser = false
+            
+            post.likes = post.likes + 1
+            post.dislikes = post.dislikes - 1
+            self.posts[indexPath.item] = post
+            
+            UIView.performWithoutAnimation {
+                self.collectionView?.reloadItems(at: [indexPath])
+            }
+            
             let values = ["like" : 1]
             Database.database().reference().child("likes").child(post.id).child(uid).updateChildValues(values) { (err, _) in
                 if let err = err {
                     print("Failed to like post:", err)
                     return
                 }
-                post.likedByCurrentUser = true
-                post.likes = post.likes + 1
-                self.posts[indexPath.item] = post
-                UIView.performWithoutAnimation {
-                    self.collectionView?.reloadItems(at: [indexPath])
+                
+                Database.database().reference().child("likes").child(post.id).child(uid).child("dislike").removeValue { (err, _) in
+                    if let err = err {
+                        print("Failed to unlike post:", err)
+                        return
+                    }
+ 
+
+                    if dict?["dislike"] as? Int ?? 0 == 1 {
+                        myLikesRef.child("counts").observeSingleEvent(of: .value, with: { (DataSnapshot) in
+                            let count = DataSnapshot.value as? [String: Any]
+                            let newLikesCount = (count?["likesCount"] as? Int ?? 0) + 1
+                            let newDislikesCount = (count?["dislikeCount"] as? Int ?? 0) - 1
+                            
+                            myLikesRef.child("counts").updateChildValues(["likesCount": newLikesCount, "dislikeCount": newDislikesCount])
+                            
+                            UIView.performWithoutAnimation {
+                                self.collectionView?.reloadItems(at: [indexPath])
+                            }
+                        })
+                    }else{
+                        
+                        myLikesRef.child("counts").observeSingleEvent(of: .value, with: { (DataSnapshot) in
+                            let count = DataSnapshot.value as? [String: Any]
+                            let newLikesCount = (count?["likesCount"] as? Int ?? 0) + 1
+                           
+                            
+                            myLikesRef.child("counts").updateChildValues(["likesCount": newLikesCount])
+                            
+                            UIView.performWithoutAnimation {
+                                self.collectionView?.reloadItems(at: [indexPath])
+                            }
+                        })
+                    }
+                 
                 }
             }
         }
+        })
     }
+    
+    
+    func didDislike(for cell: UICollectionViewCell) {
+        
+        print("did dislike")
+        guard let indexPath = collectionView?.indexPath(for: cell) else { return }
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        
+        var post = posts[indexPath.item]
+        
+        let myLikesRef = Database.database().reference().child("likes").child(post.id)
+        
+        myLikesRef.child(uid).observeSingleEvent(of: .value, with: { (DataSnapshot) in
+            let dict = DataSnapshot.value as? [String: Any]
+            
+        if post.dislikedByCurrentUser {
+            Database.database().reference().child("likes").child(post.id).child(uid).child("dislike").removeValue { (err, _) in
+                if let err = err {
+                    print("Failed to unlike post:", err)
+                    return
+                }
+                post.dislikedByCurrentUser = false
+                post.dislikes = post.dislikes - 1
+                self.posts[indexPath.item] = post
+       
+             
+                    myLikesRef.child("counts").observeSingleEvent(of: .value, with: { (DataSnapshot) in
+                        let count = DataSnapshot.value as? [String: Any]
+                        
+                        let newLikesCount = (count?["dislikeCount"] as? Int ?? 0) - 1
+                      
+                        
+                        myLikesRef.child("counts").updateChildValues(["dislikeCount": newLikesCount])
+                        UIView.performWithoutAnimation {
+                            self.collectionView?.reloadItems(at: [indexPath])
+                        }
+                    })
+             
+
+               
+                
+                
+                
+                
+                
+            }
+            
+            
+            
+        } else {
+            post.dislikedByCurrentUser = true
+            post.likedByCurrentUser = false
+            post.dislikes = post.dislikes + 1
+            post.likes = post.likes - 1
+            self.posts[indexPath.item] = post
+            let values = ["dislike" : 1]
+            
+            UIView.performWithoutAnimation {
+                self.collectionView?.reloadItems(at: [indexPath])
+            }
+            Database.database().reference().child("likes").child(post.id).child(uid).updateChildValues(values) { (err, _) in
+                if let err = err {
+                    print("Failed to like post:", err)
+                    return
+                }
+                
+                Database.database().reference().child("likes").child(post.id).child(uid).child("like").removeValue { (err, _) in
+                    if let err = err {
+                        print("Failed to unlike post:", err)
+                        return
+                    }
+                    
+
+              
+         
+                        if dict?["like"] as? Int ?? 0 == 1 {
+                            myLikesRef.child("counts").observeSingleEvent(of: .value, with: { (DataSnapshot) in
+                                let count = DataSnapshot.value as? [String: Any]
+                                let newLikesCount = (count?["likesCount"] as? Int ?? 0) - 1
+                                let newDislikesCount = (count?["dislikeCount"] as? Int ?? 0) + 1
+                                
+                                myLikesRef.child("counts").updateChildValues(["likesCount": newLikesCount, "dislikeCount": newDislikesCount])
+                                
+                                UIView.performWithoutAnimation {
+                                    self.collectionView?.reloadItems(at: [indexPath])
+                                }
+                            })
+                        } else{
+                            
+                            
+                            myLikesRef.child("counts").observeSingleEvent(of: .value, with: { (DataSnapshot) in
+                                let count = DataSnapshot.value as? [String: Any]
+                             
+                                let newDislikesCount = (count?["dislikeCount"] as? Int ?? 0) + 1
+                                
+                                myLikesRef.child("counts").updateChildValues(["dislikeCount": newDislikesCount])
+                                
+                                UIView.performWithoutAnimation {
+                                    self.collectionView?.reloadItems(at: [indexPath])
+                                }
+                            })
+                    }
+                  
+      
+             
+                    
+                }
+
+            }
+        }
+        })
+    }
+    
     
 
 }

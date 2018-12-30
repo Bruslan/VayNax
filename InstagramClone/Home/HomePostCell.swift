@@ -13,6 +13,7 @@ protocol HomePostCellDelegate {
     func didTapUser(user: User)
     func didTapOptions(post: Post)
     func didLike(for cell: UICollectionViewCell)
+    func didDislike(for cell: UICollectionViewCell)
     func didBookMark(for: UICollectionViewCell)
     func didSave(for cell: UICollectionViewCell)
 
@@ -55,6 +56,14 @@ class HomePostCell: UICollectionViewCell {
         return button
     }()
     
+    private lazy var dislikeButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(#imageLiteral(resourceName: "icons8-schaumfinger-50").withRenderingMode(.alwaysOriginal), for: .normal)
+        button.addTarget(self, action: #selector(handleDislike), for: .touchUpInside)
+        button.transform = CGAffineTransform(scaleX: -1, y: -1);
+        return button
+    }()
+    
     
     private lazy var savebutton: UIButton = {
         let button = UIButton(type: .system)
@@ -68,6 +77,13 @@ class HomePostCell: UICollectionViewCell {
         button.setImage(#imageLiteral(resourceName: "icons8-sprechblase-mit-punkten-50").withRenderingMode(.alwaysOriginal), for: .normal)
         button.addTarget(self, action: #selector(handleComment), for: .touchUpInside)
         return button
+    }()
+    
+    private let commentCounter: UILabel = {
+        let label = UILabel()
+        label.font = UIFont.boldSystemFont(ofSize: 14)
+        label.textColor = .gray
+        return label
     }()
     
     private let sendMessageButton: UIButton = {
@@ -87,7 +103,15 @@ class HomePostCell: UICollectionViewCell {
     private let likeCounter: UILabel = {
         let label = UILabel()
         label.font = UIFont.boldSystemFont(ofSize: 14)
-        label.textColor = .black
+        label.textColor = .green
+        
+        return label
+    }()
+    
+    private let dislikeCounter: UILabel = {
+        let label = UILabel()
+        label.font = UIFont.boldSystemFont(ofSize: 14)
+        label.textColor = .red
         return label
     }()
     
@@ -120,22 +144,29 @@ class HomePostCell: UICollectionViewCell {
         setupActionButtons()
 
         addSubview(likeCounter)
-        likeCounter.anchor(top: likeButton.bottomAnchor, left: leftAnchor, paddingTop: padding, paddingLeft: padding)
+        likeCounter.anchor(top: likeButton.bottomAnchor, left: likeButton.leftAnchor, right: likeButton.rightAnchor, paddingTop: padding )
         
+      
+        addSubview(commentCounter)
+        commentCounter.anchor(top: commentButton.bottomAnchor, left: commentButton.leftAnchor, paddingTop: padding)
+        
+        addSubview(dislikeCounter)
+        dislikeCounter.anchor(top: dislikeButton.bottomAnchor, left: dislikeButton.leftAnchor,  right: dislikeButton.rightAnchor, paddingTop: padding)
 
     }
     
     private func setupActionButtons() {
-        let stackView = UIStackView(arrangedSubviews: [likeButton, commentButton, savebutton])
+        let stackView = UIStackView(arrangedSubviews: [likeButton, dislikeButton, commentButton, savebutton])
         stackView.distribution = .fillEqually
         stackView.alignment = .top
         stackView.spacing = 16
         addSubview(stackView)
         
-        stackView.anchor(top: photoImageView.bottomAnchor, left: leftAnchor, paddingTop: padding, paddingLeft: padding)
+        stackView.anchor(top: photoImageView.bottomAnchor, left: leftAnchor, paddingTop: padding, paddingLeft: padding, paddingRight: padding)
         
         addSubview(bookmarkButton)
-        bookmarkButton.anchor(top: photoImageView.bottomAnchor, right: rightAnchor, paddingTop: padding, paddingRight: padding)
+        bookmarkButton.anchor(top: photoImageView.bottomAnchor, right: rightAnchor, paddingTop: padding, paddingLeft: padding, paddingRight: padding)
+        
     }
     
     private func configurePost() {
@@ -146,9 +177,14 @@ class HomePostCell: UICollectionViewCell {
         
         photoImageView.loadImage(urlString: post.imageUrl)
         likeButton.setImage(post.likedByCurrentUser == true ? #imageLiteral(resourceName: "icons8-schaumfinger-filled-50").withRenderingMode(.alwaysOriginal) : #imageLiteral(resourceName: "icons8-schaumfinger-50").withRenderingMode(.alwaysOriginal), for: .normal)
+        dislikeButton.setImage(post.dislikedByCurrentUser == true ? #imageLiteral(resourceName: "icons8-schaumfinger-filled-50").withRenderingMode(.alwaysOriginal) : #imageLiteral(resourceName: "icons8-schaumfinger-50").withRenderingMode(.alwaysOriginal), for: .normal)
         bookmarkButton.setImage(post.bookMarkedByCurrentUser == true ? #imageLiteral(resourceName: "icons8-stecknadel-filled-50").withRenderingMode(.alwaysOriginal) : #imageLiteral(resourceName: "icons8-stecknadel-50").withRenderingMode(.alwaysOriginal), for: .normal)
         
+        
+        
         setLikes(to: post.likes)
+        setCommentCount(to: post.commentCount)
+        setDislikes(to: post.dislikes)
         setupAttributedCaption()
     }
     
@@ -168,9 +204,30 @@ class HomePostCell: UICollectionViewCell {
         if value <= 0 {
             likeCounter.text = ""
         } else if value == 1 {
-            likeCounter.text = "1 halal"
+            likeCounter.text = "1"
         } else {
-            likeCounter.text = "\(value) halals"
+            likeCounter.text = "\(value)"
+        }
+    }
+    
+    private func setCommentCount(to value: Int) {
+        if value <= 0 {
+            commentCounter.text = ""
+        } else if value == 1 {
+            commentCounter.text = "1 Comment"
+        } else {
+            commentCounter.text = "\(value) Comments"
+        }
+    }
+    
+    
+    private func setDislikes(to value: Int) {
+        if value <= 0 {
+            dislikeCounter.text = ""
+        } else if value == 1 {
+            dislikeCounter.text = "1"
+        } else {
+            dislikeCounter.text = "\(value)"
         }
     }
     
@@ -179,6 +236,11 @@ class HomePostCell: UICollectionViewCell {
     @objc private func handleLike() {
         impact.impactOccurred()
         delegate?.didLike(for: self)
+        
+    }
+    @objc private func handleDislike() {
+        impact.impactOccurred()
+        delegate?.didDislike(for: self)
         
     }
     
